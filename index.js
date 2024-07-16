@@ -1,18 +1,20 @@
 const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { token, spotifyClientId, spotifyClientSecret, clientId, guildId } = require('./config.json');
 const { DisTube } = require('distube');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { REST, Routes } = require('discord.js');
+const ffmpeg = require('ffmpeg-static'); // تحميل ffmpeg
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 const distube = new DisTube(client, {
     plugins: [new SpotifyPlugin({
         api: {
-            clientId: spotifyClientId,
-            clientSecret: spotifyClientSecret
+            clientId: process.env.SPOTIFY_CLIENT_ID,
+            clientSecret: process.env.SPOTIFY_CLIENT_SECRET
         }
-    })]
+    })],
+    youtubeDL: false, // Disable youtube-dl
+    ffmpegPath: ffmpeg.path // تعيين مسار ffmpeg
 });
 
 client.once('ready', () => {
@@ -95,7 +97,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-client.login(token);
+client.login(process.env.DISCORD_TOKEN);
 
 // Deploy slash commands
 const commands = [
@@ -123,14 +125,14 @@ const commands = [
         ),
 ].map(command => command.toJSON());
 
-const rest = new REST({ version: '10' }).setToken(token);
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
     try {
         console.log('Started refreshing application (/) commands.');
 
         await rest.put(
-            Routes.applicationGuildCommands(clientId, guildId),
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
             { body: commands },
         );
 
